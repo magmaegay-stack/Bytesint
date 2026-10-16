@@ -13,6 +13,7 @@ import {
   updateProfile,
   useUserSession,
 } from "./session"
+import { DiscordTicketModal } from "./DiscordTicketModal"
 
 type ToolCategory = "all" | "data" | "gaming" | "identity" | "finance"
 
@@ -656,6 +657,7 @@ export function Dashboard() {
   const [redeemInput, setRedeemInput] = useState("")
   const [isRedeeming, setIsRedeeming] = useState(false)
   const [redeemStatus, setRedeemStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [ticketModal, setTicketModal] = useState<{ open: boolean; planName?: string; planPrice?: number }>({ open: false })
 
   const activeTool = useMemo(() => TOOLS.find((t) => t.id === selectedToolId) || TOOLS[0], [selectedToolId])
   const history = getSearchHistory()
@@ -1540,7 +1542,7 @@ export function Dashboard() {
       {/* ======================================================== */}
       {/* 2. BODY SPLIT: SIDEBAR ON LEFT, SCROLLABLE MAIN ON RIGHT */}
       {/* ======================================================== */}
-      <div className="flex flex-1 overflow-hidden relative pt-18">
+      <div className="flex flex-1 overflow-hidden relative pt-[76px]">
         {/* ====================================================== */}
         {/* LEFT SIDEBAR (FROSTED GLASSMATCHING LANDING)          */}
         {/* ====================================================== */}
@@ -2564,33 +2566,43 @@ export function Dashboard() {
           {/* VIEW C: ACCOUNT VIEW                                 */}
           {/* ==================================================== */}
           {activeView === "account" && (
-            <div className="mx-auto w-full max-w-5xl space-y-8 animate-rise pb-20">
-              <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+            <div className="mx-auto w-full max-w-6xl space-y-8 animate-rise px-4 pt-4 sm:pt-6 pb-24">
+              <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
                 {/* Left Sub-sidebar */}
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {/* User Profile Card */}
-                  <div className="glass rounded-2xl border border-white/[0.12] bg-black/40 p-5 text-center shadow-xl">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black font-semibold text-xl shadow-lg">
+                  <div className="glass rounded-3xl border border-white/[0.14] bg-black/50 p-6 text-center shadow-2xl backdrop-blur-2xl">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-white/90 to-white text-black font-bold text-2xl shadow-xl ring-4 ring-white/10">
                       {user.username.charAt(0).toUpperCase()}
                     </div>
-                    <h3 className="mt-3 font-medium text-white truncate">{user.username}</h3>
-                    <div className="mt-2 flex items-center justify-center gap-2">
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase font-mono text-white/70">
+                    <h3 className="mt-3.5 text-base font-semibold text-white truncate">@{user.username}</h3>
+                    <p className="text-xs text-white/50 truncate">{user.email || "No email linked"}</p>
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] uppercase font-mono font-semibold text-emerald-400">
                         {user.plan || "Free"}
                       </span>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-mono text-white/70">
-                        {user.credits} credits
+                      <span className="rounded-full bg-white/10 border border-white/10 px-2.5 py-0.5 text-[10px] font-mono text-white/80">
+                        {user.credits} crediti
                       </span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setTicketModal({ open: true, planName: "Pro Pack", planPrice: 15 })}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-neutral-200 active:scale-95 shadow-md"
+                    >
+                      <Icon icon="fa6-brands:discord" className="h-3.5 w-3.5 text-[#5865F2]" />
+                      <span>Ricarica Crediti</span>
+                    </button>
                   </div>
 
                   {/* Sub-menu navigation */}
-                  <div className="glass rounded-2xl border border-white/[0.1] bg-black/40 p-2 space-y-1 text-xs shadow-xl">
+                  <div className="glass rounded-2xl border border-white/[0.1] bg-black/40 p-2 space-y-1 text-xs shadow-xl backdrop-blur-2xl">
                     <button
                       type="button"
                       onClick={() => setAccountSubTab("overview")}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 transition ${
-                        accountSubTab === "overview" ? "bg-white text-black font-medium shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
+                        accountSubTab === "overview" ? "bg-white text-black font-semibold shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon icon="ph:squares-four-bold" className="h-4 w-4" />
@@ -2600,8 +2612,8 @@ export function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setAccountSubTab("profile")}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 transition ${
-                        accountSubTab === "profile" ? "bg-white text-black font-medium shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
+                        accountSubTab === "profile" ? "bg-white text-black font-semibold shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon icon="ph:user-bold" className="h-4 w-4" />
@@ -2611,8 +2623,8 @@ export function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setAccountSubTab("security")}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 transition ${
-                        accountSubTab === "security" ? "bg-white text-black font-medium shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
+                        accountSubTab === "security" ? "bg-white text-black font-semibold shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon icon="ph:shield-bold" className="h-4 w-4" />
@@ -2622,23 +2634,23 @@ export function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setAccountSubTab("billing")}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 transition ${
-                        accountSubTab === "billing" ? "bg-white text-black font-medium shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
+                        accountSubTab === "billing" ? "bg-white text-black font-semibold shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon icon="ph:credit-card-bold" className="h-4 w-4" />
-                      <span>Billing & Credits</span>
+                      <span>Billing & Crediti</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setAccountSubTab("developer")}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 transition ${
-                        accountSubTab === "developer" ? "bg-white text-black font-medium shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 transition ${
+                        accountSubTab === "developer" ? "bg-white text-black font-semibold shadow" : "text-white/70 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon icon="ph:code-bold" className="h-4 w-4" />
-                      <span>Developer</span>
+                      <span>Developer API</span>
                     </button>
 
                     <div className="my-2 border-t border-white/[0.08]" />
@@ -2664,39 +2676,59 @@ export function Dashboard() {
                 </div>
 
                 {/* Right Content Panel */}
-                <div className="glass rounded-3xl border border-white/[0.12] bg-black/50 p-8 shadow-2xl backdrop-blur-2xl">
+                <div className="glass rounded-3xl border border-white/[0.12] bg-black/50 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
                   {/* OVERVIEW */}
                   {accountSubTab === "overview" && (
                     <div className="space-y-6 animate-rise">
                       <div>
                         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">ACCOUNT • OVERVIEW</p>
                         <h2 className="text-2xl font-medium tracking-tight text-white mt-1">
-                          Welcome back, {user.username}.
+                          Bentornato, {user.username}.
                         </h2>
-                        <p className="text-xs text-white/50">Your usage, plan, and session metrics.</p>
+                        <p className="text-xs text-white/50">Stato del profilo, saldo crediti e registro delle attività.</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                        <div className="glass rounded-xl p-4 border border-white/10">
+                        <div className="glass rounded-2xl p-4 border border-white/10">
                           <p className="text-[10px] text-white/40 uppercase font-mono">Searches today</p>
                           <p className="text-xl font-medium text-white mt-1">0 / 5</p>
                         </div>
-                        <div className="glass rounded-xl p-4 border border-white/10">
-                          <p className="text-[10px] text-white/40 uppercase font-mono">Credits</p>
-                          <p className="text-xl font-medium text-white mt-1">{user.credits}</p>
+                        <div className="glass rounded-2xl p-4 border border-white/10">
+                          <p className="text-[10px] text-white/40 uppercase font-mono">Crediti</p>
+                          <p className="text-xl font-semibold text-emerald-400 mt-1">{user.credits}</p>
                         </div>
-                        <div className="glass rounded-xl p-4 border border-white/10">
-                          <p className="text-[10px] text-white/40 uppercase font-mono">Plan</p>
+                        <div className="glass rounded-2xl p-4 border border-white/10">
+                          <p className="text-[10px] text-white/40 uppercase font-mono">Piano</p>
                           <p className="text-xl font-medium text-white mt-1">{user.plan || "Free"}</p>
                         </div>
-                        <div className="glass rounded-xl p-4 border border-white/10">
-                          <p className="text-[10px] text-white/40 uppercase font-mono">Member Since</p>
+                        <div className="glass rounded-2xl p-4 border border-white/10">
+                          <p className="text-[10px] text-white/40 uppercase font-mono">Iscritto il</p>
                           <p className="text-xl font-medium text-white mt-1">{user.joinedAt}</p>
                         </div>
                       </div>
 
+                      {/* Upgrade Banner */}
+                      <div className="rounded-2xl border border-white/15 bg-gradient-to-r from-white/[0.08] to-white/[0.02] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-emerald-300 mb-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            ACQUISTI TICKET DISCORD ATTIVI
+                          </span>
+                          <h4 className="text-sm font-semibold text-white">Hai bisogno di più crediti o piano illimitato?</h4>
+                          <p className="text-xs text-white/60">Apri un ticket nel nostro server Discord ufficiale per attivazione istantanea.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setTicketModal({ open: true, planName: "Pro Pack", planPrice: 15 })}
+                          className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black hover:bg-neutral-200 transition shadow-lg"
+                        >
+                          <Icon icon="fa6-brands:discord" className="h-3.5 w-3.5 text-[#5865F2]" />
+                          <span>Acquista via Discord</span>
+                        </button>
+                      </div>
+
                       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                        <h4 className="text-sm font-medium text-white">Recent Search History</h4>
+                        <h4 className="text-sm font-medium text-white">Cronologia Ricerche Recenti</h4>
                         <div className="mt-3 divide-y divide-white/10 text-xs">
                           {history.length > 0 ? (
                             history.slice(0, 5).map((rec) => (
@@ -2709,7 +2741,7 @@ export function Dashboard() {
                               </div>
                             ))
                           ) : (
-                            <p className="py-3 text-white/40">No search records yet.</p>
+                            <p className="py-3 text-white/40">Nessuna ricerca recente.</p>
                           )}
                         </div>
                       </div>
@@ -2820,27 +2852,84 @@ export function Dashboard() {
                   {accountSubTab === "billing" && (
                     <div className="space-y-6 animate-rise">
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">SETTINGS • CREDITS</p>
-                        <h2 className="text-2xl font-medium tracking-tight text-white mt-1">Credits & Plan Balance</h2>
-                        <p className="text-xs text-white/50">Redeem voucher cards or refill your search allocation.</p>
+                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">SETTINGS • CREDITI & PIANI</p>
+                        <h2 className="text-2xl font-medium tracking-tight text-white mt-1">Saldo Crediti & Acquisto Piani</h2>
+                        <p className="text-xs text-white/50">Acquista pacchetti crediti o riscatta una chiave licenza.</p>
                       </div>
 
                       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
-                          <p className="text-xs text-white/50 uppercase font-mono">Available Balance</p>
-                          <p className="text-3xl font-bold text-white mt-1">{user.credits} Credits</p>
-                          <p className="text-xs text-emerald-400 mt-1">Ready for 20+ OSINT search engines</p>
+                          <p className="text-xs text-white/50 uppercase font-mono">Saldo Disponibile</p>
+                          <p className="text-3xl font-bold text-white mt-1">{user.credits} Crediti</p>
+                          <p className="text-xs text-emerald-400 mt-1">Accesso completo a tutti i moduli OSINT</p>
                         </div>
-                        <Link
-                          to="/pricing"
-                          className="rounded-full bg-white px-6 py-2.5 text-xs font-semibold text-black hover:bg-white/90 transition shadow-lg"
+                        <button
+                          type="button"
+                          onClick={() => setTicketModal({ open: true, planName: "Pro Pack", planPrice: 15 })}
+                          className="rounded-full bg-white px-6 py-2.5 text-xs font-semibold text-black hover:bg-neutral-200 transition shadow-lg flex items-center gap-2"
                         >
-                          Refill Balance
-                        </Link>
+                          <Icon icon="fa6-brands:discord" className="h-3.5 w-3.5 text-[#5865F2]" />
+                          <span>Acquista con Ticket Discord</span>
+                        </button>
+                      </div>
+
+                      {/* Pacchetti disponibili con acquisto diretto Discord ticket */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-mono uppercase tracking-wider text-white/60">Pacchetti Disponibili</h4>
+                        <div className="grid gap-4 sm:grid-cols-3">
+                          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
+                            <div>
+                              <p className="text-xs font-mono text-white/60">STARTER</p>
+                              <p className="text-2xl font-bold text-white mt-1">€5</p>
+                              <p className="text-[11px] text-white/50 mt-1">50 crediti ricerche</p>
+                              <p className="text-[11px] text-emerald-400 mt-2 font-mono">✓ Tutti i moduli OSINT</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setTicketModal({ open: true, planName: "Starter Pack", planPrice: 5 })}
+                              className="mt-4 w-full rounded-xl bg-white/10 hover:bg-white hover:text-black py-2 text-xs font-medium text-white transition"
+                            >
+                              Apri Ticket (€5)
+                            </button>
+                          </div>
+
+                          <div className="rounded-2xl border border-white/20 bg-white/10 p-4 flex flex-col justify-between relative overflow-hidden">
+                            <span className="absolute top-2 right-2 rounded-full bg-white text-black px-2 py-0.5 text-[9px] font-bold uppercase">Popular</span>
+                            <div>
+                              <p className="text-xs font-mono text-white/70">PRO PACK</p>
+                              <p className="text-2xl font-bold text-white mt-1">€15</p>
+                              <p className="text-[11px] text-white/50 mt-1">250 crediti ricerche</p>
+                              <p className="text-[11px] text-emerald-400 mt-2 font-mono">✓ Export JSON & TXT illimitati</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setTicketModal({ open: true, planName: "Pro Pack", planPrice: 15 })}
+                              className="mt-4 w-full rounded-xl bg-white py-2 text-xs font-semibold text-black hover:bg-neutral-200 transition shadow"
+                            >
+                              Apri Ticket (€15)
+                            </button>
+                          </div>
+
+                          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
+                            <div>
+                              <p className="text-xs font-mono text-white/60">UNLIMITED</p>
+                              <p className="text-2xl font-bold text-white mt-1">€40</p>
+                              <p className="text-[11px] text-white/50 mt-1">1,000 crediti + priorità</p>
+                              <p className="text-[11px] text-emerald-400 mt-2 font-mono">✓ Accesso Stealer Logs & API</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setTicketModal({ open: true, planName: "Unlimited Pack", planPrice: 40 })}
+                              className="mt-4 w-full rounded-xl bg-white/10 hover:bg-white hover:text-black py-2 text-xs font-medium text-white transition"
+                            >
+                              Apri Ticket (€40)
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
                       <form onSubmit={handleRedeemVoucher} className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
-                        <h4 className="text-xs font-medium text-white">Redeem Voucher Card or License</h4>
+                        <h4 className="text-xs font-medium text-white">Riscatta Chiave Licenza o Voucher</h4>
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -2853,7 +2942,7 @@ export function Dashboard() {
                             type="submit"
                             className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs text-white hover:bg-white/20 transition"
                           >
-                            Redeem
+                            Riscatta
                           </button>
                         </div>
                       </form>
@@ -2927,7 +3016,7 @@ export function Dashboard() {
                   <h3 className="font-medium text-sm text-white">Discord Guild</h3>
                   <p className="text-xs text-white/60">Connect with analysts and stay informed on new database releases.</p>
                   <a
-                    href="https://discord.gg/MGfYVxGfz"
+                    href="https://discord.gg/T5pZgFbGE"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-block text-xs font-mono text-white underline hover:opacity-80"
@@ -3016,7 +3105,7 @@ export function Dashboard() {
                 </p>
                 <div className="pt-1">
                   <a
-                    href="https://discord.gg/MGfYVxGfz"
+                    href="https://discord.gg/T5pZgFbGE"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-[11px] text-[#5865F2] hover:underline"
@@ -3057,6 +3146,17 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* MODAL: ACQUISTO PACCHETTI / CREDITI VIA TICKET DISCORD   */}
+      {/* ======================================================== */}
+      <DiscordTicketModal
+        isOpen={ticketModal.open}
+        onClose={() => setTicketModal({ open: false })}
+        isLoggedIn={Boolean(user)}
+        planName={ticketModal.planName}
+        planPrice={ticketModal.planPrice}
+      />
     </div>
   )
 }

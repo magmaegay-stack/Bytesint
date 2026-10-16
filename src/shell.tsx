@@ -215,12 +215,12 @@ export function Shell({ children }: { children: ReactNode }) {
               Public, source-linked intelligence for people who need the record next to the claim.
             </p>
             <div className="mt-6 flex items-center gap-4">
-              <BrandLink slug="discord" label="bytesint.xyz on Discord" to="https://discord.gg/MGfYVxGfz" />
+              <BrandLink slug="discord" label="bytesint.xyz on Discord" to="https://discord.gg/T5pZgFbGE" />
               <BrandLink slug="telegram" label="bytesint.xyz contact" to="/contact" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-            <FooterCol title="Community" links={[["Help", "/help"], ["Contact", "/contact"], ["Discord", "https://discord.gg/MGfYVxGfz"]]} />
+            <FooterCol title="Community" links={[["Help", "/help"], ["Contact", "/contact"], ["Discord", "https://discord.gg/T5pZgFbGE"]]} />
             <FooterCol title="Resources" links={[["Documentation", "/documentation"], ["Sign in", "/login"], ["Create account", "/register"]]} />
             <FooterCol title="Product" links={[["Pricing", "/pricing"], ["Status", "/status"], ["FAQ", "/faq"]]} />
             <FooterCol title="Legal" links={[["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"], ["Legal notice", "/legal"], ["EULA", "/eula"]]} />

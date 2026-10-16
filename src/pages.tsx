@@ -4,6 +4,8 @@ import { Link } from "react-router-dom"
 import { BrandMark, brands } from "./components/brands"
 import { advancedPacks, questions, starterPacks, type PackSide } from "./data"
 import { PackSwitch, RisingPrice } from "./pricing-ui"
+import { useUserSession } from "./session"
+import { DiscordTicketModal } from "./DiscordTicketModal"
 
 function PageIntro({ icon, kicker, title, copy }: { icon: string; kicker: string; title: string; copy: string }) {
   return (
@@ -52,16 +54,18 @@ export function ContactPage() {
       {sent ? <p className="mt-6 text-sm text-white/70">Noted in this preview only. Nothing was transmitted.</p> : null}
       <div className="mt-10 flex justify-center gap-8 text-sm text-white/70">
         <Link to="/help" className="hover:text-white">Help</Link>
-        <a href="https://discord.gg/MGfYVxGfz" target="_blank" rel="noreferrer" className="hover:text-white">Discord</a>
+        <a href="https://discord.gg/T5pZgFbGE" target="_blank" rel="noreferrer" className="hover:text-white">Discord</a>
       </div>
     </main>
   )
 }
 
 export function PricingPage() {
+  const user = useUserSession()
   const [pack, setPack] = useState<PackSide>("starter")
   const [index, setIndex] = useState(1)
   const [fromPrice, setFromPrice] = useState<number | null>(null)
+  const [ticketModal, setTicketModal] = useState<{ open: boolean; planName?: string; planPrice?: number }>({ open: false })
   const plans = pack === "starter" ? starterPacks : advancedPacks
   const plan = plans[index] ?? plans[0]
 
@@ -124,11 +128,24 @@ export function PricingPage() {
               </li>
             ))}
           </ul>
-          <Link to="/register" className="mt-8 inline-flex rounded-full bg-white px-6 py-2.5 text-sm text-black">
-            Get Started
-          </Link>
+          <button
+            type="button"
+            onClick={() => setTicketModal({ open: true, planName: plan.name, planPrice: plan.price })}
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-all hover:bg-neutral-200 active:scale-95 shadow-lg shadow-white/10"
+          >
+            <Icon icon="fa6-brands:discord" className="h-4 w-4 text-[#5865F2]" />
+            <span>Acquista Pacchetto</span>
+          </button>
         </div>
       </div>
+
+      <DiscordTicketModal
+        isOpen={ticketModal.open}
+        onClose={() => setTicketModal({ open: false })}
+        isLoggedIn={Boolean(user)}
+        planName={ticketModal.planName}
+        planPrice={ticketModal.planPrice}
+      />
     </main>
   )
 }
@@ -234,7 +251,7 @@ export function DiscordPage() {
       </p>
       <div className="mt-8 flex items-center justify-center gap-4">
         <a
-          href="https://discord.gg/MGfYVxGfz"
+          href="https://discord.gg/T5pZgFbGE"
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-medium text-black hover:bg-white/90 transition shadow-lg"

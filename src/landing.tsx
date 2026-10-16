@@ -4,6 +4,8 @@ import { Link } from "react-router-dom"
 import { brands, BrandMark } from "./components/brands"
 import { advancedPacks, questions, starterPacks, steps, type PackSide } from "./data"
 import { PackSwitch, RisingPrice } from "./pricing-ui"
+import { useUserSession } from "./session"
+import { DiscordTicketModal } from "./DiscordTicketModal"
 
 interface DemoSelector {
   id: string
@@ -85,6 +87,8 @@ const DEMO_ITEMS: DemoSelector[] = [
 ]
 
 export function Landing() {
+  const user = useUserSession()
+  const [ticketModal, setTicketModal] = useState<{ open: boolean; planName?: string; planPrice?: number }>({ open: false })
   const [openQuestion, setOpenQuestion] = useState<string | null>(null)
   const [pack, setPack] = useState<PackSide>("starter")
   const [fromPrices, setFromPrices] = useState<number[] | null>(null)
@@ -423,9 +427,10 @@ export function Landing() {
                 </div>
 
                 <div className="mt-6 pt-2">
-                  <Link
-                    to="/register"
-                    className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium transition ${
+                  <button
+                    type="button"
+                    onClick={() => setTicketModal({ open: true, planName: plan.name, planPrice: plan.price })}
+                    className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium transition cursor-pointer ${
                       plan.popular
                         ? "bg-white text-black hover:bg-white/90"
                         : "border border-white/20 bg-white/5 text-white hover:bg-white hover:text-black"
@@ -433,7 +438,7 @@ export function Landing() {
                   >
                     <span>Get Started</span>
                     <Icon icon="lucide:arrow-up-right" className="h-3 w-3" />
-                  </Link>
+                  </button>
                 </div>
               </article>
             ))}
@@ -482,6 +487,14 @@ export function Landing() {
           </div>
         </div>
       </section>
+
+      <DiscordTicketModal
+        isOpen={ticketModal.open}
+        onClose={() => setTicketModal({ open: false })}
+        isLoggedIn={Boolean(user)}
+        planName={ticketModal.planName}
+        planPrice={ticketModal.planPrice}
+      />
     </main>
   )
 }

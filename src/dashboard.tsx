@@ -6,6 +6,7 @@ import {
   addSearchRecord,
   deductCredit,
   getSearchHistory,
+  getTimeUntilMidnight,
   getUser,
   logout,
   redeemLicenseKey,
@@ -662,15 +663,29 @@ export function Dashboard() {
   const activeTool = useMemo(() => TOOLS.find((t) => t.id === selectedToolId) || TOOLS[0], [selectedToolId])
   const history = getSearchHistory()
 
+  const [midnightCountdown, setMidnightCountdown] = useState(() => getTimeUntilMidnight().formatted)
+
   function showToast(msg: string) {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(null), 3500)
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("auth=discord_success")) {
-      showToast("Accesso con Discord completato! +100 crediti di benvenuto disponibili.")
-      window.history.replaceState({}, document.title, window.location.pathname)
+    const timer = setInterval(() => {
+      setMidnightCountdown(getTimeUntilMidnight().formatted)
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (window.location.search.includes("auth=discord_success")) {
+        showToast("Accesso con Discord completato! 20 crediti giornalieri attivi (si rinnovano a mezzanotte).")
+        window.history.replaceState({}, document.title, window.location.pathname)
+      } else if (!sessionStorage.getItem("bytesint_welcome_shown")) {
+        showToast("🎁 20 crediti giornalieri accreditati! Si rinnovano automaticamente ogni mezzanotte (00:00).")
+        sessionStorage.setItem("bytesint_welcome_shown", "1")
+      }
     }
   }, [])
 
@@ -1732,7 +1747,8 @@ export function Dashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-white">@{user.username}</p>
-                    <p className="text-[10px] text-emerald-400 font-mono font-semibold">{user.credits} crediti • {user.plan}</p>
+                    <p className="text-[10px] text-emerald-400 font-mono font-semibold">{user.credits} cr • 20/giorno</p>
+                    <p className="text-[9px] text-white/40 font-mono">Rinnovo tra {midnightCountdown}</p>
                   </div>
                 </div>
                 <button
@@ -1877,21 +1893,14 @@ export function Dashboard() {
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <div className="rounded-2xl p-5 border border-emerald-500/30 bg-emerald-500/10 shadow-lg backdrop-blur-xl hover:border-emerald-500/50 transition">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">CREDITI DISPONIBILI</p>
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">CREDITI GIORNALIERI</p>
                     <Icon icon="ph:coins-bold" className="h-4 w-4 text-emerald-400" />
                   </div>
                   <p className="mt-2 text-2xl font-medium font-mono text-white tracking-tight">{user.credits} cr</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRedeemStatus(null)
-                      setShowRedeemModal(true)
-                    }}
-                    className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-300 hover:text-emerald-200 hover:underline cursor-pointer"
-                  >
-                    <Icon icon="ph:key-bold" className="h-3 w-3" />
-                    <span>Riscatta codice key →</span>
-                  </button>
+                  <p className="mt-1 flex items-center gap-1 text-[11px] font-mono text-emerald-300/80">
+                    <Icon icon="ph:clock-countdown-bold" className="h-3 w-3 text-emerald-400" />
+                    <span>Rinnovo a mezzanotte ({midnightCountdown})</span>
+                  </p>
                 </div>
 
                 <div className="rounded-2xl p-5 border border-white/10 bg-black/50 shadow-lg backdrop-blur-xl hover:border-white/20 transition">
@@ -2694,8 +2703,9 @@ export function Dashboard() {
                           <p className="text-xl font-medium text-white mt-1">0 / 5</p>
                         </div>
                         <div className="glass rounded-2xl p-4 border border-white/10">
-                          <p className="text-[10px] text-white/40 uppercase font-mono">Crediti</p>
-                          <p className="text-xl font-semibold text-emerald-400 mt-1">{user.credits}</p>
+                          <p className="text-[10px] text-white/40 uppercase font-mono">Crediti Giornalieri</p>
+                          <p className="text-xl font-semibold text-emerald-400 mt-1">{user.credits} cr</p>
+                          <p className="text-[10px] text-emerald-300/80 font-mono mt-0.5">Rinnovo 00:00 ({midnightCountdown})</p>
                         </div>
                         <div className="glass rounded-2xl p-4 border border-white/10">
                           <p className="text-[10px] text-white/40 uppercase font-mono">Piano</p>
@@ -2861,7 +2871,9 @@ export function Dashboard() {
                         <div>
                           <p className="text-xs text-white/50 uppercase font-mono">Saldo Disponibile</p>
                           <p className="text-3xl font-bold text-white mt-1">{user.credits} Crediti</p>
-                          <p className="text-xs text-emerald-400 mt-1">Accesso completo a tutti i moduli OSINT</p>
+                          <p className="text-xs text-emerald-400 mt-1">
+                            Include 20 crediti giornalieri gratuiti rinnovati a mezzanotte ({midnightCountdown})
+                          </p>
                         </div>
                         <button
                           type="button"

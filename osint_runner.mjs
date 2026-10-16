@@ -1022,8 +1022,10 @@ export async function handleApiRequest(req, res) {
           displayName,
           email,
           avatar: avatarUrl,
-          credits: 100, // 100 crediti di benvenuto per login Discord!
-          plan: "Discord Operator",
+          credits: 20, // 20 crediti giornalieri di benvenuto
+          dailyCredits: 20,
+          lastDailyRenewal: new Date().toISOString().slice(0, 10),
+          plan: "Discord Free Tier",
           apiKey: `by_live_${randomBytes(12).toString("hex")}`,
           joinedAt: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
           discordId: dUser.id,

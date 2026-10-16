@@ -9,6 +9,63 @@ export interface UserProfile {
   plan: string
   apiKey: string
   joinedAt: string
+  lastDailyRenewal?: string // Data YYYY-MM-DD dell'ultimo accredito giornaliero
+  dailyCredits?: number    // Quota crediti giornalieri (20)
+}
+
+export const DAILY_CREDITS = 20
+
+export function getTodayString(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, "0")
+  const d = String(now.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
+
+export function getTimeUntilMidnight(): { hours: number; minutes: number; formatted: string } {
+  const now = new Date()
+  const midnight = new Date(now)
+  midnight.setHours(24, 0, 0, 0)
+  const diffMs = midnight.getTime() - now.getTime()
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return {
+    hours,
+    minutes,
+    formatted: `${hours}h ${minutes}m`,
+  }
+}
+
+export function applyDailyCreditsRenewal(profile: UserProfile): { profile: UserProfile; renewed: boolean } {
+  const today = getTodayString()
+
+  // Se è un profilo al primo tracciamento
+  if (!profile.lastDailyRenewal) {
+    profile.lastDailyRenewal = today
+    profile.dailyCredits = DAILY_CREDITS
+    if (typeof profile.credits !== "number" || profile.credits < DAILY_CREDITS) {
+      profile.credits = DAILY_CREDITS
+    }
+    return { profile, renewed: false }
+  }
+
+  // Se è passata la mezzanotte!
+  if (profile.lastDailyRenewal !== today) {
+    profile.lastDailyRenewal = today
+    profile.dailyCredits = DAILY_CREDITS
+    // Rinnovo: se ha esaurito o intaccato i 20 crediti, tornano a 20.
+    // Se ha crediti extra, riceve il bonus giornaliero di 20 crediti!
+    if (profile.credits < DAILY_CREDITS) {
+      profile.credits = DAILY_CREDITS
+    } else {
+      profile.credits += DAILY_CREDITS
+    }
+    return { profile, renewed: true }
+  }
+
+  return { profile, renewed: false }
 }
 
 export interface SearchRecord {
@@ -85,7 +142,7 @@ export function getUser(): UserProfile | null {
               }
             } catch {}
 
-            const userProfile: UserProfile = {
+            const rawProfile: UserProfile = {
               username: String(parsed.username || "operator").trim(),
               displayName: String(parsed.displayName || parsed.username || "Operator"),
               email: String(parsed.email || `${parsed.username}@discord.bytesint.xyz`),
@@ -94,7 +151,11 @@ export function getUser(): UserProfile | null {
               plan: String(parsed.plan || "Discord Operator"),
               apiKey: String(parsed.apiKey || generateApiKey()),
               joinedAt: String(parsed.joinedAt || "Today"),
+              lastDailyRenewal: parsed.lastDailyRenewal || getTodayString(),
+              dailyCredits: DAILY_CREDITS,
             }
+
+            const { profile: userProfile } = applyDailyCreditsRenewal(rawProfile)
 
             const data = JSON.stringify(userProfile)
             localStorage.setItem(USER_KEY, data)
@@ -139,10 +200,12 @@ export function getUser(): UserProfile | null {
           displayName: u,
           email: `${u.toLowerCase()}@bytesint.xyz`,
           avatar: "terminal",
-          credits: 50,
-          plan: "Operator Tier",
+          credits: DAILY_CREDITS,
+          plan: "Free Tier",
           apiKey: generateApiKey(),
           joinedAt: "Today",
+          lastDailyRenewal: getTodayString(),
+          dailyCredits: DAILY_CREDITS,
         }
         localStorage.setItem(USER_KEY, JSON.stringify(userObj))
         return userObj
@@ -150,16 +213,26 @@ export function getUser(): UserProfile | null {
 
       if (parsed && typeof parsed === "object" && parsed.username) {
         const u = String(parsed.username).trim()
-        return {
+        const userObj: UserProfile = {
           username: u,
           displayName: String(parsed.displayName || u),
           email: String(parsed.email || `${u.toLowerCase()}@bytesint.xyz`),
           avatar: String(parsed.avatar || "terminal"),
-          credits: typeof parsed.credits === "number" ? parsed.credits : 50,
-          plan: String(parsed.plan || "Operator Tier"),
+          credits: typeof parsed.credits === "number" ? parsed.credits : DAILY_CREDITS,
+          plan: String(parsed.plan || "Free Tier"),
           apiKey: String(parsed.apiKey || generateApiKey()),
           joinedAt: String(parsed.joinedAt || "Today"),
+          lastDailyRenewal: parsed.lastDailyRenewal,
+          dailyCredits: typeof parsed.dailyCredits === "number" ? parsed.dailyCredits : DAILY_CREDITS,
         }
+
+        const { profile: renewedProfile, renewed } = applyDailyCreditsRenewal(userObj)
+        if (renewed || !parsed.lastDailyRenewal) {
+          const data = JSON.stringify(renewedProfile)
+          localStorage.setItem(USER_KEY, data)
+          sessionStorage.setItem(USER_KEY, data)
+        }
+        return renewedProfile
       }
     }
 
@@ -250,6 +323,12 @@ export async function redeemLicenseKey(rawKey: string): Promise<{ success: boole
 }
 
 export function saveUser(profile: UserProfile): void {
+  if (!profile.lastDailyRenewal) {
+    profile.lastDailyRenewal = getTodayString()
+  }
+  if (!profile.dailyCredits) {
+    profile.dailyCredits = DAILY_CREDITS
+  }
   const data = JSON.stringify(profile)
   localStorage.setItem(USER_KEY, data)
   sessionStorage.setItem(USER_KEY, data)
@@ -267,18 +346,24 @@ export function updateProfile(updates: Partial<UserProfile>): UserProfile | null
 export function login(username: string, email?: string): UserProfile {
   const existing = getUser()
   const cleanUser = username.trim()
+  const today = getTodayString()
   
   if (existing && existing.username.toLowerCase() === cleanUser.toLowerCase()) {
-    return existing
+    const { profile: refreshed, renewed } = applyDailyCreditsRenewal(existing)
+    if (renewed) saveUser(refreshed)
+    return refreshed
   }
 
+  // Nuovo utente / primo login: 20 crediti giornalieri
   const profile: UserProfile = {
     username: cleanUser,
     displayName: cleanUser,
     email: email?.trim() || `${cleanUser.toLowerCase()}@bytesint.xyz`,
     avatar: "terminal",
-    credits: 60,
-    plan: "Analyst Pro",
+    credits: DAILY_CREDITS, // 20 crediti al primo accesso
+    dailyCredits: DAILY_CREDITS,
+    lastDailyRenewal: today,
+    plan: "Free Tier",
     apiKey: generateApiKey(),
     joinedAt: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
   }
@@ -356,9 +441,24 @@ export function useUserSession() {
     window.addEventListener(AUTH_EVENT, handleAuthChange)
     window.addEventListener("storage", handleAuthChange)
 
+    // Controllo periodico del rinnovo a mezzanotte (ogni 15s)
+    const midnightInterval = setInterval(() => {
+      const refreshed = getUser()
+      if (refreshed) {
+        setUser((prev) => {
+          if (!prev) return refreshed
+          if (prev.credits !== refreshed.credits || prev.lastDailyRenewal !== refreshed.lastDailyRenewal) {
+            return refreshed
+          }
+          return prev
+        })
+      }
+    }, 15000)
+
     return () => {
       window.removeEventListener(AUTH_EVENT, handleAuthChange)
       window.removeEventListener("storage", handleAuthChange)
+      clearInterval(midnightInterval)
     }
   }, [])
 

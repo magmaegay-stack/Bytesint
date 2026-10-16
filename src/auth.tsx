@@ -50,13 +50,16 @@ function DiscordLoginButton({ mode = "login" }: { mode?: "login" | "register" })
     if (!handle) return
 
     const cleanUser = handle.replace(/^@/, "").replace(/#.*$/, "")
+    const today = new Date().toISOString().slice(0, 10)
     const newUser = {
       username: cleanUser,
       displayName: handle,
       email: `${cleanUser.toLowerCase()}@discord.bytesint.xyz`,
       avatar: "terminal",
-      credits: 100, // 100 crediti benvenuto Discord
-      plan: "Discord Operator",
+      credits: 20, // 20 crediti giornalieri rinnovabili a mezzanotte
+      dailyCredits: 20,
+      lastDailyRenewal: today,
+      plan: "Free Tier",
       apiKey: `by_live_${Math.random().toString(36).substring(2, 14)}`,
       joinedAt: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
       discordId: "quick_discord_session",
@@ -94,7 +97,7 @@ function DiscordLoginButton({ mode = "login" }: { mode?: "login" | "register" })
               <h3 className="text-base font-semibold text-white">Accesso Rapido Discord</h3>
             </div>
             <p className="mt-2 text-xs text-white/60">
-              Inserisci il tuo username Discord o ID per accedere istantaneamente con 100 crediti inclusi.
+              Inserisci il tuo username Discord o ID per accedere istantaneamente con 20 crediti giornalieri (rinnovo automatico a mezzanotte).
             </p>
             <form onSubmit={handleQuickDiscordLogin} className="mt-4 space-y-3">
               <input
@@ -212,7 +215,7 @@ export function RegisterPage() {
       </div>
       <h1 className="mt-2 text-3xl font-medium tracking-[-0.04em]">Crea il tuo account</h1>
       <p className="mt-2 text-sm font-light text-white/60">
-        Registrati per accedere alla piattaforma <strong>bytesint.xyz</strong>. Ricevi <strong>50 crediti</strong> gratuiti di benvenuto!
+        Registrati per accedere alla piattaforma <strong>bytesint.xyz</strong>. Ricevi subito <strong>20 crediti giornalieri</strong> gratuiti che si rinnovano automaticamente ogni giorno a mezzanotte!
       </p>
 
       {/* Accesso con Discord */}

@@ -25,22 +25,33 @@ def check_hudson_rock(target: str, is_email: bool) -> dict:
     
     data = fetch_json(endpoint, timeout=6)
     if not data or not isinstance(data, dict):
-        return {"stealers_count": 0, "malware_families": [], "compromised": False}
+        return {"stealers_count": 0, "malware_families": [], "compromised": False, "details": []}
     
     stealers = data.get("stealers") or []
     count = data.get("total") or len(stealers)
     families = set()
+    cleaned_stealers = []
+
     for s in stealers:
         if isinstance(s, dict):
-            fam = s.get("stealer_family") or s.get("malware")
-            if fam:
-                families.add(fam)
+            fam = s.get("stealer_family") or s.get("malware") or "Infostealer"
+            families.add(fam)
+            cleaned_stealers.append({
+                "date": s.get("date_compromised", "Unknown"),
+                "computer_name": s.get("computer_name", "Unknown PC"),
+                "operating_system": s.get("operating_system", "Unknown OS"),
+                "services_compromised": s.get("total_user_services", 0),
+                "corporate_services": s.get("total_corporate_services", 0),
+                "malware_family": fam,
+                "malware_path": s.get("malware_path", "N/A"),
+                "masked_logins": [x for x in (s.get("top_logins") or []) if x][:5],
+            })
     
     return {
         "stealers_count": count,
         "malware_families": list(families),
         "compromised": count > 0,
-        "details": stealers[:5]
+        "details": cleaned_stealers
     }
 
 def check_leakcheck(target: str) -> dict:
@@ -57,7 +68,7 @@ def check_leakcheck(target: str) -> dict:
         if isinstance(s, dict):
             cleaned_sources.append({
                 "name": s.get("name", "Unknown Source"),
-                "date": s.get("date", "Undisclosed")
+                "date": s.get("date") or "Undisclosed"
             })
     
     return {
@@ -83,12 +94,30 @@ def check_shodan_internetdb(target: str) -> dict:
         "vulns": data.get("vulns", [])
     }
 
+def check_hackertarget_geoip(target: str) -> dict:
+    ip_pattern = r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"
+    if not re.match(ip_pattern, target):
+        return None
+    try:
+        req = urllib.request.Request(f"https://api.hackertarget.com/geoip/?q={target}", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            text = resp.read().decode("utf-8")
+            res = {}
+            for line in text.splitlines():
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    res[k.strip().lower()] = v.strip()
+            return res
+    except Exception:
+        return None
+
 def leak_osint(target: str) -> dict:
     clean = target.strip()
     is_email = "@" in clean and "." in clean
     
-    # 1. Check IP Shodan
+    # 1. Check IP Shodan & HackerTarget
     shodan_res = check_shodan_internetdb(clean)
+    geoip_res = check_hackertarget_geoip(clean)
     
     # 2. Check Hudson Rock (Info-stealers)
     hudson_res = check_hudson_rock(clean, is_email)
@@ -96,14 +125,17 @@ def leak_osint(target: str) -> dict:
     # 3. Check LeakCheck (Breach databases)
     leakcheck_res = check_leakcheck(clean)
     
-    total_breaches = (hudson_res.get("stealers_count", 0)) + (leakcheck_res.get("sources_count", 0))
+    stealer_list = hudson_res.get("details", [])
+    breach_list = leakcheck_res.get("sources", [])
+    
+    total_breaches = len(stealer_list) + len(breach_list)
     is_found = total_breaches > 0 or (shodan_res is not None and len(shodan_res.get("ports", [])) > 0)
     
-    threat_score = min(100, (hudson_res.get("stealers_count", 0) * 25) + (leakcheck_res.get("sources_count", 0) * 15))
+    threat_score = min(100, (len(stealer_list) * 25) + (len(breach_list) * 8))
     
-    sources_list = [s["name"] for s in leakcheck_res.get("sources", [])[:8]]
+    sources_summary = [s["name"] for s in breach_list[:10]]
     if hudson_res.get("malware_families"):
-        sources_list.extend([f"Infostealer: {m}" for m in hudson_res.get("malware_families")])
+        sources_summary.extend([f"Infostealer ({m})" for m in hudson_res.get("malware_families")])
     
     return {
         "target": clean,
@@ -116,8 +148,11 @@ def leak_osint(target: str) -> dict:
             "hudson_rock": hudson_res,
             "leakcheck": leakcheck_res,
             "shodan": shodan_res,
-            "breach_sources": sources_list,
-            "status": "Compromised Records Found" if is_found else "Safe / Zero Public Breaches"
+            "geoip": geoip_res,
+            "stealer_logs": stealer_list,
+            "breach_sources": breach_list,
+            "sources_summary": sources_summary,
+            "status": f"{total_breaches} Violazioni / Stealer rilevati" if is_found else "Nessuna violazione pubblica rilevata"
         }
     }
 

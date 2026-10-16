@@ -1,11 +1,85 @@
 import json
 import os
+import sys
 from datetime import datetime, timezone
-from curl_cffi import requests
 
-if os.name == "nt":
-    os.system("chcp 65001 >nul")
+def http_get(url: str, headers: dict = None, timeout: int = 10):
+    hdr = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+    if headers:
+        hdr.update(headers)
 
+    # 1. curl_cffi
+    try:
+        from curl_cffi import requests as cffi_req
+        r = cffi_req.get(url, headers=hdr, impersonate="chrome120", timeout=timeout)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+
+    # 2. requests
+    try:
+        import requests
+        r = requests.get(url, headers=hdr, timeout=timeout)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+
+    # 3. urllib
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, headers=hdr)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status == 200:
+                return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        pass
+
+    return None
+
+def http_post(url: str, json_data: dict, headers: dict = None, timeout: int = 12):
+    hdr = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if headers:
+        hdr.update(headers)
+
+    # 1. curl_cffi
+    try:
+        from curl_cffi import requests as cffi_req
+        r = cffi_req.post(url, headers=hdr, json=json_data, impersonate="chrome120", timeout=timeout)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+
+    # 2. requests
+    try:
+        import requests
+        r = requests.post(url, headers=hdr, json=json_data, timeout=timeout)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+
+    # 3. urllib
+    try:
+        import urllib.request
+        data_bytes = json.dumps(json_data).encode("utf-8")
+        req = urllib.request.Request(url, data=data_bytes, headers=hdr, method="POST")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status == 200:
+                return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        pass
+
+    return None
 
 def roblox_lookup(target: str) -> dict:
     clean = target.strip().lstrip("@")
@@ -18,27 +92,16 @@ def roblox_lookup(target: str) -> dict:
         "return": {},
     }
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-
     try:
         user_id = None
         user_name = clean
+        display_name = None
 
         # Check if target is a numeric Roblox User ID
         if clean.isdigit():
             user_id = int(clean)
-            profile_resp = requests.get(
-                f"https://users.roblox.com/v1/users/{user_id}",
-                headers=headers,
-                impersonate="chrome120",
-                timeout=10,
-            )
-            if profile_resp.status_code == 200:
-                p_data = profile_resp.json()
+            p_data = http_get(f"https://users.roblox.com/v1/users/{user_id}")
+            if p_data and isinstance(p_data, dict) and p_data.get("id"):
                 user_name = p_data.get("name", clean)
                 display_name = p_data.get("displayName")
             else:
@@ -46,21 +109,11 @@ def roblox_lookup(target: str) -> dict:
 
         if not user_id:
             # Search by username via users API
-            search_resp = requests.post(
+            search_data = http_post(
                 "https://users.roblox.com/v1/usernames/users",
-                headers=headers,
-                json={"usernames": [clean], "excludeBannedUsers": False},
-                impersonate="chrome120",
-                timeout=15,
+                json_data={"usernames": [clean], "excludeBannedUsers": False},
             )
-
-            if search_resp.status_code != 200:
-                result["result"] = "error"
-                result["msg"] = f"HTTP {search_resp.status_code}"
-                return result
-
-            search_data = search_resp.json()
-            users = search_data.get("data", [])
+            users = search_data.get("data", []) if search_data and isinstance(search_data, dict) else []
 
             if not users:
                 result["result"] = "not_found"
@@ -83,70 +136,38 @@ def roblox_lookup(target: str) -> dict:
 
         # get full profile
         if user_id:
-            profile_resp = requests.get(
-                f"https://users.roblox.com/v1/users/{user_id}",
-                headers=headers,
-                impersonate="chrome120",
-                timeout=10,
-            )
-            if profile_resp.status_code == 200:
-                profile = profile_resp.json()
+            profile = http_get(f"https://users.roblox.com/v1/users/{user_id}")
+            if profile and isinstance(profile, dict):
                 return_data["description"] = profile.get("description") or None
                 if profile.get("created"):
                     return_data["joined"] = profile["created"][:10]
                 return_data["is_banned"] = profile.get("isBanned", False)
 
             # fetch live avatar headshot
-            try:
-                av_head = requests.get(
-                    f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=420x420&format=Png&isCircular=false",
-                    headers=headers,
-                    impersonate="chrome120",
-                    timeout=8,
-                )
-                if av_head.status_code == 200:
-                    av_data = av_head.json().get("data", [])
-                    if av_data and av_data[0].get("imageUrl"):
-                        return_data["avatar_url"] = av_data[0]["imageUrl"]
-                        return_data["avatar_headshot"] = av_data[0]["imageUrl"]
-            except Exception:
-                pass
+            av_head = http_get(f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={user_id}&size=420x420&format=Png&isCircular=false")
+            if av_head and isinstance(av_head, dict):
+                av_data = av_head.get("data", [])
+                if av_data and av_data[0].get("imageUrl"):
+                    return_data["avatar_url"] = av_data[0]["imageUrl"]
+                    return_data["avatar_headshot"] = av_data[0]["imageUrl"]
 
             # fetch live 3D avatar body render
-            try:
-                av_body = requests.get(
-                    f"https://thumbnails.roblox.com/v1/users/avatar?userIds={user_id}&size=420x420&format=Png&isCircular=false",
-                    headers=headers,
-                    impersonate="chrome120",
-                    timeout=8,
-                )
-                if av_body.status_code == 200:
-                    body_data = av_body.json().get("data", [])
-                    if body_data and body_data[0].get("imageUrl"):
-                        return_data["avatar_render"] = body_data[0]["imageUrl"]
-                        if "avatar_url" not in return_data:
-                            return_data["avatar_url"] = body_data[0]["imageUrl"]
-            except Exception:
-                pass
+            av_body = http_get(f"https://thumbnails.roblox.com/v1/users/avatar?userIds={user_id}&size=420x420&format=Png&isCircular=false")
+            if av_body and isinstance(av_body, dict):
+                body_data = av_body.get("data", [])
+                if body_data and body_data[0].get("imageUrl"):
+                    return_data["avatar_render"] = body_data[0]["imageUrl"]
+                    if "avatar_url" not in return_data:
+                        return_data["avatar_url"] = body_data[0]["imageUrl"]
 
             # get friends/follower counts
-            counts_resp = requests.get(
-                f"https://friends.roblox.com/v1/users/{user_id}/followers/count",
-                headers=headers,
-                impersonate="chrome120",
-                timeout=10,
-            )
-            if counts_resp.status_code == 200:
-                return_data["followers"] = counts_resp.json().get("count", 0)
+            followers_data = http_get(f"https://friends.roblox.com/v1/users/{user_id}/followers/count")
+            if followers_data and isinstance(followers_data, dict):
+                return_data["followers"] = followers_data.get("count", 0)
 
-            friends_resp = requests.get(
-                f"https://friends.roblox.com/v1/users/{user_id}/friends/count",
-                headers=headers,
-                impersonate="chrome120",
-                timeout=10,
-            )
-            if friends_resp.status_code == 200:
-                return_data["friends"] = friends_resp.json().get("count", 0)
+            friends_data = http_get(f"https://friends.roblox.com/v1/users/{user_id}/friends/count")
+            if friends_data and isinstance(friends_data, dict):
+                return_data["friends"] = friends_data.get("count", 0)
 
         result["result"] = "found"
         result["return"] = {k: v for k, v in return_data.items() if v is not None and v != ""}
@@ -157,11 +178,9 @@ def roblox_lookup(target: str) -> dict:
 
     return result
 
-
 if __name__ == "__main__":
-    import sys as _sys
-    if len(_sys.argv) < 2:
+    if len(sys.argv) < 2:
         print('{"error": "missing argument"}')
-        _sys.exit(1)
-    _res = roblox_lookup(_sys.argv[1].strip())
-    print(json.dumps(_res, indent=4, ensure_ascii=False))
+        sys.exit(1)
+    res = roblox_lookup(sys.argv[1].strip())
+    print(json.dumps(res, indent=4, ensure_ascii=False))

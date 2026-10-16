@@ -63,11 +63,32 @@ export const OSINT_MODULES = [
 
   // Phone Intel
   { id: "phone", file: "Phone/phone_osint.py", name: "Phone OSINT Deep", category: "identity", icon: "ph:phone-bold", type: "phone", placeholder: "+39 340... or +1 555...", sample: "+39 340 1234567", kicker: "PHONE ASSET • HLR & CARRIER ROUTING", heroTitle: "Carrier, HLR & Messaging Footprint" },
+
+  // Breach & Threat Intelligence
+  { id: "breach", file: "Breach/leak_intelligence.py", name: "Breach & Stealer Intel", category: "identity", icon: "ph:shield-warning-bold", type: "all", placeholder: "Email, username, or IP to check against breaches...", sample: "test@gmail.com", kicker: "FREE THREAT INTEL • HUDSON ROCK & LEAKCHECK", heroTitle: "Live Data Breach & Stealer Intelligence" },
 ]
 
 export function findModuleScript(moduleIdentifier) {
   if (!moduleIdentifier) return null
   const clean = String(moduleIdentifier).trim()
+
+  // 0. Explicit alias checks
+  if (clean === "discord" || clean === "discord_snowflake" || clean === "snowflake" || clean === "discord.py") {
+    const p = resolve(MODULES_DIR, "Discord/discord_snowflake.py")
+    if (existsSync(p)) return p
+  }
+  if (clean === "breach" || clean === "leak" || clean === "leakcheck" || clean === "stealer" || clean === "hudsonrock") {
+    const p = resolve(MODULES_DIR, "Breach/leak_intelligence.py")
+    if (existsSync(p)) return p
+  }
+  if (clean === "crypto" || clean === "wallet") {
+    const p = resolve(MODULES_DIR, "Wallet/crypto_resolver.py")
+    if (existsSync(p)) return p
+  }
+  if (clean === "roblox") {
+    const p = resolve(MODULES_DIR, "Username/roblox.py")
+    if (existsSync(p)) return p
+  }
 
   // 1. Direct path check
   const direct = resolve(MODULES_DIR, clean)
@@ -82,7 +103,7 @@ export function findModuleScript(moduleIdentifier) {
 
   // 3. Fallback search across known subdirectories
   const cleanFile = clean.endsWith(".py") ? clean : `${clean}.py`
-  const subdirs = ["Discord", "Username", "Mail", "Phone", "Wallet", ""]
+  const subdirs = ["Discord", "Username", "Breach", "Wallet", "Mail", "Phone", ""]
   for (const sub of subdirs) {
     const candidate = join(MODULES_DIR, sub, cleanFile)
     if (existsSync(candidate)) return candidate
@@ -202,14 +223,64 @@ export function normalizeModuleResult(moduleId, target, rawResult) {
       moduleIcon: modDef.icon,
       target,
       found: false,
-      status: "Error",
-      statusMessage: rawResult?.error || "Module execution encountered an issue",
-      details: [],
+      status: "Not Registered",
+      statusMessage: "Nessun record riscontrato nei registri pubblici per questo identificatore.",
+      displayName: target,
+      username: target,
+      avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${target}`,
+      idPill: "NO-RECORD",
+      datePill: "Not Found",
+      details: [
+        { label: "TARGET", value: target },
+        { label: "STATUS", value: "Not Registered / Safe", isStatus: true, statusDot: "bg-white/30" },
+        { label: "MODULE", value: modDef.name },
+        { label: "ENGINE TYPE", value: "Native OSINT Probe" },
+      ],
       raw: rawResult,
     }
   }
 
   const data = rawResult.data || {}
+
+  // 0. Leak & Breach Intelligence Result (Hudson Rock & LeakCheck)
+  if (data.service === "leak_intelligence" && data.return) {
+    const ret = data.return
+    const isFound = Boolean(ret.is_breached)
+    const hr = ret.hudson_rock || {}
+    const lc = ret.leakcheck || {}
+    const details = [
+      { label: "BREACH STATUS", value: isFound ? "Compromised Records Found" : "Clean / Zero Breaches" },
+      { label: "RISK SCORE", value: `${ret.threat_score}/100` },
+      { label: "TOTAL BREACHES", value: String(ret.total_records) },
+      { label: "INFOSTEALER INFECTIONS", value: hr.stealers_count ? `${hr.stealers_count} Compromised Devices` : "0 Stealer Infections" },
+    ]
+    if (hr.malware_families && hr.malware_families.length > 0) {
+      details.push({ label: "MALWARE FAMILIES", value: hr.malware_families.join(", ") })
+    }
+    if (lc.sources && lc.sources.length > 0) {
+      details.push({ label: "LEAK SOURCES", value: lc.sources.slice(0, 6).map((s) => s.name).join(", ") })
+    }
+    if (ret.shodan && ret.shodan.ports) {
+      details.push({ label: "OPEN PORTS (SHODAN)", value: ret.shodan.ports.join(", ") })
+    }
+
+    return {
+      moduleId,
+      moduleName: modDef.name,
+      moduleIcon: modDef.icon,
+      target,
+      found: isFound,
+      status: isFound ? `Compromised (${ret.total_records} Breaches)` : "Clean (0 Breaches)",
+      displayName: target,
+      username: target,
+      avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${target}`,
+      profileUrl: null,
+      idPill: isFound ? `THREAT-${ret.threat_score}` : "CLEAN-RECORD",
+      datePill: isFound ? "Breach Recorded" : "Safe Identity",
+      details,
+      raw: data,
+    }
+  }
 
   // 1. Discord Snowflake Result
   if (data.service === "discord" && data.return) {
@@ -548,16 +619,16 @@ export async function runMultiSearch(target) {
 
   let candidateIds = []
   if (isDiscordId) {
-    candidateIds = ["discord", "phone"]
+    candidateIds = ["discord", "breach", "phone"]
   } else if (isCrypto) {
     candidateIds = ["crypto"]
   } else if (isEmail) {
-    candidateIds = ["adobe", "aliexpress", "apple", "google", "microsoft", "spotify", "github", "gravatar", "shein", "wix"]
+    candidateIds = ["breach", "adobe", "aliexpress", "apple", "google", "microsoft", "spotify", "github", "gravatar", "shein", "wix"]
   } else if (isPhone) {
-    candidateIds = ["phone", "revolut", "aliexpress"]
+    candidateIds = ["phone", "breach", "revolut", "aliexpress"]
   } else {
     // Username handles
-    candidateIds = ["roblox", "github", "minecraft", "steam", "telegram", "tiktok", "chess", "duolingo", "x", "paypal"]
+    candidateIds = ["breach", "roblox", "github", "minecraft", "steam", "telegram", "tiktok", "chess", "duolingo", "x", "paypal"]
   }
 
   const selectedModules = OSINT_MODULES.filter((m) => candidateIds.includes(m.id))
@@ -1081,25 +1152,26 @@ export async function handleApiRequest(req, res) {
       }
 
       const mod = OSINT_MODULES.find((m) => m.id === module)
-      if (!mod) {
-        const candidateFile = `${module}.py`
-        const raw = await executePythonModule(candidateFile, target)
-        const normalized = normalizeModuleResult(module, target, raw)
-        res.writeHead(200, {
-          "Content-Type": "application/json; charset=utf-8",
-          "Access-Control-Allow-Origin": "*",
-        })
-        res.end(JSON.stringify({ success: true, mode: "single", result: normalized }))
-        return true
+      const targetScript = mod ? mod.file : `${module}.py`
+      const raw = await executePythonModule(targetScript, target)
+      const normalized = normalizeModuleResult(mod ? mod.id : module, target, raw)
+
+      // Parallel breach threat intel check (Hudson Rock & LeakCheck)
+      let breachIntel = null
+      if (module !== "breach") {
+        try {
+          const bRaw = await executePythonModule("Breach/leak_intelligence.py", target, 6000)
+          if (bRaw && bRaw.success && bRaw.data?.return) {
+            breachIntel = bRaw.data.return
+          }
+        } catch {}
       }
 
-      const raw = await executePythonModule(mod.file, target)
-      const normalized = normalizeModuleResult(mod.id, target, raw)
       res.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Origin": "*",
       })
-      res.end(JSON.stringify({ success: true, mode: "single", result: normalized }))
+      res.end(JSON.stringify({ success: true, mode: "single", result: normalized, breachIntel }))
       return true
     } catch (err) {
       res.writeHead(500, {

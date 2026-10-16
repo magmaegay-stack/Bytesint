@@ -493,6 +493,18 @@ const TOOLS: ToolDef[] = [
     heroTitle: "Carrier & Routing Lookup",
     tabs: ["Carrier Details", "Messaging", "Routing"],
   },
+  {
+    id: "breach",
+    name: "Breach & Stealer Intel",
+    desc: "Free threat intel: Hudson Rock info-stealers, LeakCheck public breaches, and Shodan InternetDB.",
+    category: "identity",
+    icon: "ph:shield-warning-bold",
+    placeholder: "Email, username, or IP address...",
+    sample: "test@gmail.com",
+    kicker: "FREE THREAT INTEL • HUDSON ROCK & LEAKCHECK",
+    heroTitle: "Live Data Breach & Stealer Intelligence",
+    tabs: ["Breach Records", "Info-stealers", "Risk Score"],
+  },
 
   // FINTECH & CRYPTO WALLET
   {
@@ -790,30 +802,40 @@ export function Dashboard() {
               : [
                   { label: "TARGET", value: target },
                   { label: "STATUS", value: isFound ? "Verified Active" : "Not Registered", isStatus: true, statusDot: isFound ? "bg-emerald-400" : "bg-white/30" },
-                  { label: "MODULE", value: `${norm.moduleId}.py` },
+                  { label: "MODULE", value: norm.moduleName || activeTool.name },
                   { label: "ENGINE TYPE", value: "Native OSINT Probe" },
                 ],
             historyTitle: `${(norm.moduleName || activeTool.name).toUpperCase()} TELEMETRY`,
             historyText: isFound
-              ? `RECORD VERIFICATO IN TEMPO REALE TRAMITE IL MODULO ${norm.moduleId.toUpperCase()}. ZERO SEGNALAZIONI NEGATIVE.`
+              ? `RECORD VERIFICATO IN TEMPO REALE TRAMITE IL MODULO ${(norm.moduleName || activeTool.name).toUpperCase()}. ZERO SEGNALAZIONI NEGATIVE.`
               : `NESSUN ACCOUNT O RECORD TROVATO PER QUESTO IDENTIFICATORE SUL SERVIZIO.`,
             actionLabel: norm.profileUrl ? `Open ${norm.moduleName}` : `Open Public Record`,
             actionUrl: norm.profileUrl || "#",
             raw: norm.raw,
           }
 
+          const bi = resData.breachIntel || (norm.moduleId === "breach" ? norm.raw?.return : null)
+          const hasBreaches = bi ? Boolean(bi.is_breached) : false
+          const threatScore = bi ? Number(bi.threat_score || 0) : 0
+
+          const databasesChecked = [
+            { name: `${norm.moduleName || activeTool.name} live socket`, records: isFound ? "Active Node" : "Clean", status: (isFound ? "hit" : "clean") as "hit" | "clean" },
+            { name: "LeakCheck Global Breaches", records: bi?.leakcheck?.sources_count ? `${bi.leakcheck.sources_count} sources` : "0 Breaches", status: (bi?.leakcheck?.sources_count ? "hit" : "clean") as "hit" | "clean" },
+            { name: "Hudson Rock Infostealers", records: bi?.hudson_rock?.stealers_count ? `${bi.hudson_rock.stealers_count} infected devices` : "0 Infostealers", status: (bi?.hudson_rock?.stealers_count ? "hit" : "clean") as "hit" | "clean" },
+            { name: "Shodan InternetDB", records: bi?.shodan?.ports?.length ? `${bi.shodan.ports.length} open ports` : "Network Clean", status: (bi?.shodan?.ports?.length ? "hit" : "clean") as "hit" | "clean" },
+          ]
+
           const breaches: OSINTBreachReport = {
-            hasBreaches: false,
-            title: isFound ? "RECORD CONFERMATO CLEAN" : "NESSUN RECORD RISCONTRATO",
-            subtitle: `Controllo eseguito con successo tramite il modulo ${norm.moduleId}.py. Nessuna violazione registrata.`,
-            shieldType: "clean",
-            databasesChecked: [
-              { name: `${norm.moduleId}.py live API`, records: "Realtime Socket", status: isFound ? "hit" : "clean" },
-              { name: "done_final.json", records: "2.28 GB • Core", status: "clean" },
-              { name: "rockyou2024.json", records: "6.73 GB • Hashes", status: "clean" },
-              { name: "database.jsonl", records: "14.9 MB • Nodes", status: "clean" },
-            ],
-            threatScore: 0,
+            hasBreaches,
+            title: hasBreaches
+              ? `RECORD FOUND IN ${bi?.total_records || 1} PUBLIC BREACHES`
+              : (isFound ? "RECORD CONFERMATO CLEAN" : "NESSUN RECORD RISCONTRATO"),
+            subtitle: hasBreaches
+              ? `Rilevate credenziali o malware info-stealer (RedLine, Vidar, etc.) associati a questo identificatore.`
+              : `Controllo eseguito con successo tramite il modulo ${norm.moduleName || activeTool.name}. Nessuna violazione registrata.`,
+            shieldType: hasBreaches ? "exposed" : "clean",
+            databasesChecked,
+            threatScore,
           }
 
           const fullResult: OSINTResult = {

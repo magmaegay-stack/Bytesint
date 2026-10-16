@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: Satoshi;
+  src: url("/fonts/satoshi-300.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Satoshi;
+  src: url("/fonts/satoshi-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Satoshi;
+  src: url("/fonts/satoshi-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Satoshi;
+  src: url("/fonts/satoshi-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: auto;
+  scroll-padding-top: 7rem;
+}
+
+body {
+  margin: 0;
+  color: #fff;
+  background: #101010;
+  font-family: Satoshi, "Avenir Next", "Segoe UI", sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+button,
+a {
+  font: inherit;
+  color: inherit;
+}
+
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 -20px 80px -20px rgba(255, 255, 255, 0.18) inset,
+    0 8px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent 42%);
+  opacity: 0.45;
+}
+
+.glass-open {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 -20px 80px -20px rgba(255, 255, 255, 0.28) inset,
+    0 24px 60px -28px rgba(255, 255, 255, 0.45);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.auth-field {
+  width: 100%;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  outline: 2px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 0;
+}
+
+.auth-field::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.auth-field:focus {
+  outline-color: #fff;
+}
+
+/* Radar & Cyber Scanner Animations */
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sonar-wave {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes reticle-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes scan-laser {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+.animate-sonar {
+  animation: sonar-wave 3s cubic-bezier(0.1, 0.45, 0.1, 1) infinite;
+}
+
+.animate-reticle-slow {
+  animation: reticle-spin 20s linear infinite;
+}
+
+.animate-scan-laser {
+  animation: scan-laser 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+@keyframes orbit-ring {
+  0% {
+    transform: rotateX(68deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(68deg) rotateZ(360deg);
+  }
+}
+
+@keyframes orbit-ring-reverse {
+  0% {
+    transform: rotateX(72deg) rotateY(25deg) rotateZ(360deg);
+  }
+  100% {
+    transform: rotateX(72deg) rotateY(25deg) rotateZ(0deg);
+  }
+}
+
+.animate-orbit-ring {
+  animation: orbit-ring 14s linear infinite;
+}
+
+.animate-orbit-ring-rev {
+  animation: orbit-ring-reverse 18s linear infinite;
+}
+
+

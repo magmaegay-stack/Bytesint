@@ -1,0 +1,82 @@
+[
+  {
+    "key": "BYTES-DEMO-7777-TEST",
+    "credits": 250,
+    "note": "Demo Starter Key",
+    "created_at": "2026-10-05T19:00:00.000Z",
+    "created_by": "system",
+    "redeemed": true,
+    "redeemed_by": "test_operator",
+    "redeemed_at": "2026-10-05T18:35:43.967Z"
+  },
+  {
+    "key": "BYTES-3Y4H-BDKC-BVWG",
+    "credits": 350,
+    "note": "Test Pack",
+    "created_at": "2026-10-05T17:13:24.728Z",
+    "created_by": "api:caller",
+    "redeemed": true,
+    "redeemed_by": "testuser",
+    "redeemed_at": "2026-10-05T17:13:24.730Z"
+  },
+  {
+    "key": "BYTES-XEA8-S2QJ-U2HU",
+    "credits": 100,
+    "note": "Generata via Discord Bot",
+    "created_at": "2026-10-05T17:59:17.731Z",
+    "created_by": "discord:lunghezza (1529997137209725069)",
+    "redeemed": false,
+    "redeemed_by": null,
+    "redeemed_at": null
+  },
+  {
+    "key": "BYTES-DH2E-UCLH-7H3M",
+    "credits": 1000,
+    "note": "Generata via Discord Bot",
+    "created_at": "2026-10-05T18:09:47.345Z",
+    "created_by": "discord:lunghezza (1529997137209725069)",
+    "redeemed": false,
+    "redeemed_by": null,
+    "redeemed_at": null
+  },
+  {
+    "key": "BYTES-FAST-500C-TEST",
+    "credits": 500,
+    "note": "Test Key Fast 500",
+    "created_at": "2026-10-06T12:00:00.000Z",
+    "created_by": "system",
+    "redeemed": false,
+    "redeemed_by": null,
+    "redeemed_at": null
+  },
+  {
+    "key": "BYTES-2026-VIP7-GOLD",
+    "credits": 2500,
+    "note": "VIP Pack 2500",
+    "created_at": "2026-10-06T12:00:00.000Z",
+    "created_by": "system",
+    "redeemed": false,
+    "redeemed_by": null,
+    "redeemed_at": null
+  },
+  {
+    "key": "BYTES-E28N-5FJG-WATG",
+    "credits": 1000,
+    "note": "Generata via Discord Bot",
+    "created_at": "2026-10-06T12:49:20.989Z",
+    "created_by": "discord:vaghi (1529997137209725069)",
+    "redeemed": false,
+    "redeemed_by": null,
+    "redeemed_at": null
+  },
+  {
+    "key": "BYTES-1000-63VY-FNU7",
+    "credits": 1000,
+    "note": "Generata via Discord Bot (Firma Crittografica Valida)",
+    "created_at": "2026-10-06T12:58:49.236Z",
+    "created_by": "discord:bot_hmac",
+    "redeemed": true,
+    "redeemed_by": "tester",
+    "redeemed_at": "2026-10-06T12:58:49.236Z"
+  }
+]

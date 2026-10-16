@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Production builds & cache
+dist/
+.vite/
+*.local
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Large database dumps & wordlists
+databases/*.json
+databases/*.jsonl
+databases/*.csv
+databases/*.txt
+databases/*.sql
+databases/*.gz
+databases/*.zip
+databases/__pycache__/
+
+# Large video assets
+VIDEO/
+*.mp4
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Sensitive or session dumps
+*.env
+*.env.*
+modules_osint/**/cookies.*
+modules_osint/**/session.json
+modules_osint/**/*token*.json
+
+# Logs & temp debug dumps
+*.log
+*.dump.html
+chrome_dump.html
+dom_dump.html
+

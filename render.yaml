@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bytesint
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.mjs
+    domains:
+      - bytesint.xyz
+      - www.bytesint.xyz
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DOMAIN
+        value: bytesint.xyz
